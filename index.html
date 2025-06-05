@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>MoziGo DVD Nézet</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: sans-serif;
+      margin: 0;
+    }
+
+    h1 {
+      color: orange;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #clock {
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      color: cyan;
+      font-size: 18px;
+      font-family: monospace;
+      background: rgba(0, 255, 255, 0.1);
+      padding: 6px 12px;
+      border-radius: 8px;
+      z-index: 1000;
+    }
+
+    #movies {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      padding: 20px;
+      max-width: 1300px;
+      margin: auto;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(0,255,255,0.2); }
+      50%      { box-shadow: 0 0 20px rgba(0,255,255,0.6); }
+    }
+
+    .movie {
+      background-color: #111;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 2px solid cyan;
+      animation: glowPulse 3s infinite;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .movie:hover {
+      transform: rotateX(3deg) scale(1.07);
+      box-shadow: 0 0 25px rgba(0,255,255,0.6);
+    }
+
+    .movie img {
+      width: 80%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      border-bottom: 1px solid cyan;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .movie-title {
+      font-size: 14px;
+      padding: 10px 5px 0;
+      color: cyan;
+      text-align: center;
+    }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; padding: 20px; box-sizing: border-box; }
+    .modal.show { display: flex; }
+    iframe { width: 80%; height: 60%; background: #000; }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal iframe {
+      width: 90%;
+      height: 480px;
+      max-width: 1000px;
+      border: none;
+      border-radius: 10px;
+      background: #000;
+    }
+
+    .modal p {
+      color: orange;
+      padding: 10px;
+      max-width: 1000px;
+      text-align: center;
+    }
+
+    .close-btn {
+      background: darkred;
+      color: white;
+      border: 2px solid cyan;
+      padding: 10px 20px;
+      margin-top: -5px;
+      cursor: pointer;
+      border: 2px solid cyan;
+      border-radius: 5px;
+    }
+
+    .close-btn:hover {
+      background-color: red;
+    }
+
+    #header-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    #header-container img {
+      max-width: 60%;
+      height: auto;
+      max-height: 120px;
+    }
+
+    #header-text {
+      color: cyan;
+      font-size: 36px;
+      font-weight: bold;
+      margin-top: 10px;
+      text-shadow: 2px 2px 5px rgba(0, 255, 255, 0.5);
+    }
+
+    /* Preloader */
+    #preloader {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      top: 0;
+      left: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ovoo-preloader {
+      text-align: center;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top: 4px solid cyan;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .txt-loading {
+      font-size: 24px;
+      color: cyan;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .letters-loading {
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Preloader -->
+  <div id="preloader">
+    <div id="ovoo-preloader" class="ovoo-preloader">
+      <div class="animation-preloader">
+        <div class="spinner"></div>
+        <div class="txt-loading">
+          <span class="letters-loading">☆S</span>                            
+          <span class="letters-loading">A</span>                            
+          <span class="letters-loading">N</span>                            
+          <span class="letters-loading">D</span>                            
+          <span class="letters-loading">U☆</span>
+        </div>
+      </div>  
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div id="header-container">
+    <img src="https://ia600504.us.archive.org/9/items/polish-20250421-185417988/Polish_20250421_185417988.png" alt="Polish image">
+    <div id="header-text">ONLINE MAGYAR FILMEK SANDU</div>
+  </div>
+  <div id="clock">Betöltés...</div>
+  <div id="movies">Betöltés...</div>
+
+  <!-- Modal -->
+  <div class="modal" id="playerModal">
+    <iframe id="playerIframe" src="" allowfullscreen></iframe>
+    <p id="movieDesc">Leírás...</p>
+    <p id="movieGenre">Műfaj: ...</p>
+    <button class="close-btn" onclick="closeModal()">Bezárás</button>
+  </div>
+
+  <script>
+    const proxy = "https://api.allorigins.win/raw?url=";
+    const sourceUrl = "https://mozigo.hu/";
+
+    fetch(proxy + encodeURIComponent(sourceUrl))
+      .then(res => res.text())
+      .then(html => {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const items = doc.querySelectorAll(".movie-img");
+
+        const container = document.getElementById("movies");
+        container.innerHTML = "";
+
+        if (items.length === 0) {
+          container.innerHTML = "<p style='color:red;'>Nem találtunk filmeket.</p>";
+          return;
+        }
+
+        items.forEach(item => {
+          const link = item.querySelector("a")?.href;
+          const title = item.querySelector("h3")?.textContent.trim();
+          const image = item.closest(".latest-movie-img-container")?.style.backgroundImage.replace(/url\(['"]?(.*?)['"]?\)/, "$1");
+
+          if (link && title && image) {
+            const div = document.createElement("div");
+            div.className = "movie";
+            div.innerHTML = `
+              <img src="${image}" alt="${title}">
+              <div class="movie-title">${title}</div>
+            `;
+            div.onclick = () => loadPlayer(link, title);
+            container.appendChild(div);
+          }
+        });
+      })
+      .catch(err => {
+        document.getElementById("movies").innerHTML = "<p style='color:red;'>Nem sikerült betölteni a filmeket.</p>";
+        console.error(err);
+      });
+
+    function loadPlayer(link, title) {
+      document.getElementById("preloader").style.display = "flex";
+
+      fetch(proxy + encodeURIComponent(link))
+        .then(res => res.text())
+        .then(html => {
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const iframe = doc.querySelector('iframe[src*="ok.ru"], iframe[src*="videa"], iframe[src*="mozimix"], iframe[src*="picture"], iframe[src*="filemoon.sx"], iframe[src*="waaw.to"]');
+          const desc = doc.querySelector('meta[name="description"]')?.content || "Nincs leírás.";
+
+          let genre = "Ismeretlen műfaj";
+          const genreBlock = [...doc.querySelectorAll("p")].find(p => p.textContent.includes("Műfaj:"));
+          if (genreBlock) {
+            const links = genreBlock.querySelectorAll("a");
+            genre = Array.from(links).map(a => a.textContent.trim()).join(", ");
+          }
+
+          if (iframe) {
+            let src = iframe.getAttribute("src");
+            if (src.startsWith("//")) src = "https:" + src;
+            if (src.includes("ok.ru")) {
+              const id = src.split("/").pop();
+              src = `https://ok.ru/videoembed/${id}`;
+            }
+
+            document.getElementById("playerIframe").src = src;
+            document.getElementById("movieDesc").innerText = title + " – " + desc;
+            document.getElementById("movieGenre").innerText = "Műfaj: " + genre;
+            document.getElementById("playerModal").classList.add("show");
+          } else {
+            alert("Nem található lejátszó.");
+          }
+
+          document.getElementById("preloader").style.display = "none";
+        })
+        .catch(err => {
+          alert("Hiba történt a film betöltésekor.");
+          document.getElementById("preloader").style.display = "none";
+          console.error(err);
+        });
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("playerModal");
+      modal.classList.remove("show");
+      document.getElementById("playerIframe").src = "";
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const s = now.getSeconds().toString().padStart(2, '0');
+      document.getElementById("clock").textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
