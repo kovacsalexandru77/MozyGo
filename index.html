@@ -24,7 +24,7 @@
       color: cyan;
       font-size: 18px;
       font-family: monospace;
-      background: rgba(0, 255, 255, 0.1);
+      background: none;
       padding: 6px 12px;
       border-radius: 8px;
       z-index: 1000;
@@ -58,9 +58,14 @@
     }
 
     .movie:hover {
-      transform: rotateX(3deg) scale(1.07);
-      box-shadow: 0 0 25px rgba(0,255,255,0.6);
-    }
+  transform: rotateX(3deg) scale(1.07);
+  box-shadow:
+    0 0 15px cyan,
+    0 0 30px cyan,
+    0 0 45px cyan,
+    0 0 60px cyan;
+  border-color: cyan;
+}
 
     .movie img {
       width: 80%;
@@ -239,10 +244,68 @@
 
 .right-btn {
   right: 10px;
-  }
+}
+#category-bar {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  background-color: #222;
+  padding: 6px 10px;
+  border-radius: 8px;
+  z-index: 1001;
+}
+
+#category-bar select {
+  background-color: #222;
+  color: cyan;
+  border: 1px solid cyan;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#category-bar select:hover {
+  background-color: #333;
+  color: #00ffff;
+}
+
+#genre-buttons {
+  text-align: center;
+  margin: 20px 0;
+}
+
+#genre-buttons button {
+  background-color: #222;
+  color: cyan;
+  border: 1px solid cyan;
+  padding: 8px 16px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+#genre-buttons button:hover {
+  background-color: cyan;
+  color: black;
+  transform: scale(1.05);
+}
   </style>
 </head>
 <body>
+<div id="category-bar">
+  <select id="genreSelect" onchange="loadGenre(this.value)">
+    <option value="">🎬 Válassz műfajt</option>
+    <option value="thriller">Thriller</option>
+    <option value="sci-fi">Sci-Fi</option>
+    <option value="criminal">Krimi</option>
+    <option value="horror">Horror</option>
+    <option value="drama">Dráma</option>
+    <option value="comedy">Vígjáték</option>
+    <option value="action">Akció</option>
+  </select>
+</div>
   <!-- Preloader -->
   <div id="preloader">
     <div id="ovoo-preloader" class="ovoo-preloader">
@@ -262,11 +325,9 @@
   <!-- Header -->
   <div id="header-container">
     <img src="https://ia600504.us.archive.org/9/items/polish-20250421-185417988/Polish_20250421_185417988.png" alt="Polish image">
-    <div id="header-text">ONLINE MAGYAR FILMEK SANDU</div>
     <div class="carousel-wrapper">
   <button class="nav-btn left-btn" onclick="changeDirection('left')">&#10094;</button>
   <button class="nav-btn right-btn" onclick="changeDirection('right')">&#10095;</button>
-
   <div class="carousel-track" id="carouselTrack">
     <div class="slide"><img src="https://image.tmdb.org/t/p/original/fNayx3FYA9AfXxhYdgIUQT3fM8v.jpg" alt="Film 1"></div>
     <div class="slide"><img src="https://image.tmdb.org/t/p/original/tVyM1jnAwCZfCyy9WtGUMbawfGk.jpg" alt="Film 2"></div>
@@ -287,7 +348,16 @@
     <div class="slide"><img src="https://image.tmdb.org/t/p/original/wvcIONukapypq7cAF7s0IFfWOK1.jpg" alt="Film 17"></div>
     <div class="slide"><img src="https://image.tmdb.org/t/p/original/mU9jwhggx117R6Ck6tgBIkXhu5P.jpg" alt="Film 18"></div>
   </div>
-    </div>
+    <div id="genre-buttons">
+  <button onclick="loadGenre('thriller')">Thriller</button>
+  <button onclick="loadGenre('sci-fi')">Sci-Fi</button>
+  <button onclick="loadGenre('criminal')">Krimi</button>
+  <button onclick="loadGenre('horror')">Horror</button>
+  <button onclick="loadGenre('drama')">Dráma</button>
+  <button onclick="loadGenre('comedy')">Vígjáték</button>
+  <button onclick="loadGenre('action')">Akció</button>
+</div>
+</div>
   </div>
   <div id="clock">Betöltés...</div>
   <div id="movies">Betöltés...</div>
@@ -387,14 +457,6 @@
       modal.classList.remove("show");
       document.getElementById("playerIframe").src = "";
     }
-
-    function updateClock() {
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      const s = now.getSeconds().toString().padStart(2, '0');
-      document.getElementById("clock").textContent = `${h}:${m}:${s}`;
-    }
     const track = document.getElementById('carouselTrack');
 let direction = 'right';
 let speed = 40;
@@ -406,8 +468,59 @@ function changeDirection(dir) {
   track.style.animation = `scroll ${speed}s linear infinite`;
   track.style.animationDirection = dir === 'left' ? 'reverse' : 'normal';
 }
+
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const s = now.getSeconds().toString().padStart(2, '0');
+      document.getElementById("clock").textContent = `${h}:${m}:${s}`;
+    }
     setInterval(updateClock, 1000);
     updateClock();
+    function loadGenre(genre) {
+  if (!genre) return;
+
+  const container = document.getElementById("movies");
+  container.innerHTML = "<p style='color:cyan;'>Kategória betöltése: " + genre + "...</p>";
+
+  const genreUrl = "https://mozigo.hu/genre/" + genre + ".html";
+
+  fetch(proxy + encodeURIComponent(genreUrl))
+    .then(res => res.text())
+    .then(html => {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const items = doc.querySelectorAll(".movie-img");
+
+      container.innerHTML = "";
+
+      if (items.length === 0) {
+        container.innerHTML = "<p style='color:red;'>Nincs film ebben a kategóriában.</p>";
+        return;
+      }
+
+      items.forEach(item => {
+        const link = item.querySelector("a")?.href;
+        const title = item.querySelector("h3")?.textContent.trim();
+        const image = item.closest(".latest-movie-img-container")?.style.backgroundImage.replace(/url\(['"]?(.*?)['"]?\)/, "$1");
+
+        if (link && title && image) {
+          const div = document.createElement("div");
+          div.className = "movie";
+          div.innerHTML = `
+            <img src="${image}" alt="${title}">
+            <div class="movie-title">${title}</div>
+          `;
+          div.onclick = () => loadPlayer(link, title);
+          container.appendChild(div);
+        }
+      });
+    })
+    .catch(err => {
+      container.innerHTML = "<p style='color:red;'>Hiba történt a kategória betöltésekor.</p>";
+      console.error(err);
+    });
+}
   </script>
 </body>
 </html>
